@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>判断题问答小程序</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .question-card {
+            transition: all 0.3s ease;
+        }
+        .question-card.active {
+            background-color: #e6f7ff;
+            border-color: #40a9ff;
+        }
+        .answer-correct {
+            background-color: #ecfdf5;
+            border-color: #00b42a;
+        }
+        .answer-wrong {
+            background-color: #fff7ed;
+            border-color: #ff7d00;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center text-blue-600 mb-8">判断题问答挑战</h1>
+        
+        <div class="mb-6 text-right">
+            <span id="score-display" class="text-xl font-semibold text-green-600">得分: 0/18</span>
+        </div>
+        
+        <div id="questions-container" class="space-y-6">
+            <!-- 题目将通过JavaScript动态生成 -->
+        </div>
+        
+        <div class="text-center mt-10">
+            <button id="check-answers" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition">
+                查看答案
+            </button>
+            <button id="reset-quiz" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full ml-4 mt-4 hidden transition">
+                重新开始
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 题目数据
+        const questions = [
+            {
+                id: 1,
+                question: "你好，唐佳琦，请问你觉得对吗。",
+                correct: false,
+                userAnswer: null
+            },
+            {
+                id: 2,
+                question: "水在标准大气压下的沸点是100摄氏度。",
+                correct: true,
+                userAnswer: null
+            },
+            {
+                id: 3,
+                question: "人类的DNA包含46条染色体。",
+                correct: true,
+                userAnswer: null
+            },
+            {
+                id: 4,
+                question: "光速约为每秒30万公里。",
+                correct: true,
+                userAnswer: null
+            },
+            {
+                id: 5,
+                question: "计算机的中央处理器简称GPU。",
+                correct: false,
+                userAnswer: null
+            },
+            {
+                id: 6,
+                question: "《三国演义》的作者是曹雪芹。",
+                correct: false,
+                userAnswer: null
+            },
+            {
+                id: 7,
+                question: "光合作用是植物吸收氧气释放二氧化碳的过程。",
+                correct: false,
+                userAnswer: null
+            },
+            {
+                id: 8,
+                question: "中国的首都是北京。",
+                correct: true,
+                userAnswer: null
+            },
+            {
+                id: 9,
+                question: "直角等于90度。",
+                correct: true,
+                userAnswer: null
+            },
+            {
+                id: 10,
+                question: "细菌属于真核生物。",
+                correct: false,
+                userAnswer: null
+            },
+            {
+                id: 11,
+                question: "《蒙娜丽莎》是梵高的作品。",
+                correct: false,
+                userAnswer: null
+            },
+            {
+                id: 12,
+                question: "地球自转一周的时间是一年。",
+                correct: false,
+                userAnswer: null
+            },
+            {
+                id: 13,
+                question: "相对论是爱因斯坦提出的。",
+                correct: true,
+                userAnswer: null
+            },
+            {
+                id: 14,
+                question: "人体内含量最多的元素是碳。",
+                correct: false,
+                userAnswer: null
+            },
+            {
+                id: 15,
+                question: "二进制数只有0和1两个数字。",
+                correct: true,
+                userAnswer: null
+            },
+            {
+                id: 16,
+                question: "秦始皇统一了中国的文字。",
+                correct: true,
+                userAnswer: null
+            },
+            {
+                id: 17,
+                question: "太阳系有九大行星。",
+                correct: false,
+                userAnswer: null
+            },
+            {
+                id: 18,
+                question: "光合作用的场所是线粒体。",
+                correct: false,
+                userAnswer: null
+            }
+        ];
+
+        // 渲染题目
+        function renderQuestions() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+            
+            questions.forEach(question => {
+                const card = document.createElement('div');
+                card.className = 'question-card bg-white p-6 rounded-lg shadow-md border';
+                card.id = `question-${question.id}`;
+                
+                card.innerHTML = `
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">${question.id}. ${question.question}</h3>
+                    <div class="flex space-x-4">
+                        <button class="answer-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-full transition" 
+                                data-question-id="${question.id}" data-answer="true">对</button>
+                        <button class="answer-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-full transition" 
+                                data-question-id="${question.id}" data-answer="false">错</button>
+                    </div>
+                    <div class="mt-4 hidden answer-explanation" id="explanation-${question.id}">
+                        <p class="text-gray-600"></p>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+            
+            // 绑定答案按钮事件
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.addEventListener('click', handleAnswer);
+            });
+        }
+
+        // 处理用户答案
+        function handleAnswer(e) {
+            const questionId = parseInt(e.target.dataset.questionId);
+            const answer = e.target.dataset.answer === 'true';
+            const question = questions.find(q => q.id === questionId);
+            
+            if (question) {
+                question.userAnswer = answer;
+                
+                // 高亮已回答的题目
+                const card = document.getElementById(`question-${questionId}`);
+                card.classList.add('active');
+                
+                // 检查是否所有题目都已回答
+                if (questions.every(q => q.userAnswer !== null)) {
+                    document.getElementById('check-answers').disabled = false;
+                }
+            }
+        }
+
+        // 检查答案并显示结果
+        function checkAnswers() {
+            let score = 0;
+            
+            questions.forEach(question => {
+                const card = document.getElementById(`question-${question.id}`);
+                const explanation = document.getElementById(`explanation-${question.id}`);
+                explanation.classList.remove('hidden');
+                
+                if (question.userAnswer === question.correct) {
+                    score++;
+                    card.classList.add('answer-correct');
+                    explanation.innerHTML = `<p class="text-green-600 font-medium">回答正确！正确答案：${question.correct ? '对' : '错'}</p>`;
+                } else {
+                    card.classList.add('answer-wrong');
+                    explanation.innerHTML = `<p class="text-red-600 font-medium">回答错误！正确答案：${question.correct ? '对' : '错'}</p>`;
+                }
+            });
+            
+            // 更新分数显示
+            document.getElementById('score-display').textContent = `得分: ${score}/18`;
+            
+            // 显示重新开始按钮
+            document.getElementById('reset-quiz').classList.remove('hidden');
+            document.getElementById('check-answers').classList.add('hidden');
+        }
+
+        // 重置问答
+        function resetQuiz() {
+            questions.forEach(question => {
+                question.userAnswer = null;
+            });
+            
+            renderQuestions();
+            document.getElementById('score-display').textContent = '得分: 0/18';
+            document.getElementById('reset-quiz').classList.add('hidden');
+            document.getElementById('check-answers').classList.remove('hidden');
+            document.getElementById('check-answers').disabled = true;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            renderQuestions();
+            document.getElementById('check-answers').disabled = true;
+            
+            // 绑定按钮事件
+            document.getElementById('check-answers').addEventListener('click', checkAnswers);
+            document.getElementById('reset-quiz').addEventListener('click', resetQuiz);
+        });
+    </script>
+</body>
+</html>
